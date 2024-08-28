@@ -2,10 +2,11 @@ async function sendMessage() {
     const input = document.getElementById('user-input');
     const chatMessages = document.getElementById('chat-messages');
     
-    if (input.value.trim() === '') return;
+    const message = input.value.trim();
+    if (message === '') return;
 
     // 사용자 메시지 추가
-    appendMessage('user', input.value);
+    appendMessage('user', message);
 
     // AI 응답 요청
     try {
@@ -14,11 +15,12 @@ async function sendMessage() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ message: input.value }),
+            body: JSON.stringify({ message: message }),
         });
         
         if (!response.ok) {
-            throw new Error('API 응답 오류');
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'API 응답 오류');
         }
 
         const data = await response.json();
@@ -27,23 +29,8 @@ async function sendMessage() {
         appendMessage('ai', data.response);
     } catch (error) {
         console.error('오류:', error);
-        appendMessage('ai', '죄송합니다. 오류가 발생했어요.');
+        appendMessage('ai', `죄송합니다. 오류가 발생했어요: ${error.message}`);
     }
 
     input.value = '';
 }
-
-function appendMessage(sender, message) {
-    const chatMessages = document.getElementById('chat-messages');
-    const messageElement = document.createElement('div');
-    messageElement.classList.add('message', `${sender}-message`);
-    messageElement.textContent = message;
-    chatMessages.appendChild(messageElement);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-
-document.getElementById('user-input').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        sendMessage();
-    }
-});
