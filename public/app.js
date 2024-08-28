@@ -1,31 +1,19 @@
-const { Canvas, useFrame } = ReactThreeFiber;
-const { Box } = drei;
+function Counter() {
+  const [count, setCount] = React.useState(0);
 
-function Dice() {
-  const meshRef = React.useRef();
-  
-  useFrame(() => {
-    if (meshRef.current) {
-      meshRef.current.rotation.x += 0.01;
-      meshRef.current.rotation.y += 0.01;
-    }
-  });
+  const increment = () = {
+    setCount(prevCount = prevCount + 1);
+  };
 
   return (
-    <Box ref={meshRef} args={[2, 2, 2]}>
-      <meshStandardMaterial attach="material" color="white" />
-    </Box>
+    <div style={{ textAlign: 'center', marginTop: '50px' }}>
+      <h1>Simple Counter</h1>
+      <p>Count: {count}</p>
+      <button onClick={increment} style={{ fontSize: '18px', padding: '10px 20px' }}>
+        Increment
+      </button>
+    </div>
   );
 }
 
-function Scene() {
-  return (
-    <Canvas>
-      <ambientLight intensity={0.5} />
-      <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} />
-      <Dice />
-    </Canvas>
-  );
-}
-
-ReactDOM.render(<Scene />, document.getElementById('root'));
+ReactDOM.render(<Counter />, document.getElementById('root'));
