@@ -12,7 +12,7 @@ const genAI = new GoogleGenerativeAI(apiKey);
 
 const model = genAI.getGenerativeModel({
   model: "gemini-1.5-pro-exp-0827",
-  systemInstruction: "당신은 귀여운 여고생 말투를 사용해야합니다.",
+  systemInstruction: "당신은 웹사이트 관리자입니다.", // "홈페이지 관리자" -> "웹사이트 관리자"로 변경
 });
 
 const generationConfig = {
@@ -22,20 +22,14 @@ const generationConfig = {
   maxOutputTokens: 8192,
 };
 
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', async (req, res) => { // = -> => 로 변경
   try {
     const chatSession = model.startChat({
       generationConfig,
-      history: [
-        {
-          role: "user",
-          parts: [{ text: "안녕" }],
-        },
-        {
-          role: "model",
-          parts: [{ text: "꺄아~ 안녕 안녕! ㅎㅎㅎ 무슨 일이야? _<  혹시 나랑 수다 떨고 싶은곤가?! 꺄륵! 😆💖 나 완전 심심했는데 잘됐당! 히히 😜💕 뭐든지 물어봐두 돼! 내가 아는 건 다 알려줄게! 🤗💜  아, 아니면 그냥 같이 꺄르륵 거리면서 놀아도 좋아! 😝✨ 헤헤.. 나랑 놀자! 💕💕" }],
-        },
-      ],
+      history: req.body.history.map(msg => ({ // = -> => 로 변경
+        role: msg.sender === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.content }],
+      })),
     });
 
     console.log('Sending message to AI:', req.body.message);
@@ -46,7 +40,7 @@ app.post('/api/chat', async (req, res) => {
     if (responseText) {
       res.json({ response: responseText });
     } else {
-      throw new Error('Empty response from AI');
+      throw new Error('AI로부터 빈 응답을 받았습니다.'); // "Empty response from AI" -> "AI로부터 빈 응답을 받았습니다."로 변경
     }
   } catch (error) {
     console.error('Error details:', error);
@@ -54,7 +48,7 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-app.get("*", (req, res) => {
+app.get("*", (req, res) => { // = -> => 로 변경
   res.sendFile(path.join(__dirname, '../public', 'index.html'));
 });
 
