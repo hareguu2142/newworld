@@ -18,12 +18,20 @@ async function sendMessage() {
             body: JSON.stringify({ message: message }),
         });
         
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'API 응답 오류');
+        const responseText = await response.text(); // 응답을 텍스트로 받습니다.
+        
+        let data;
+        try {
+            data = JSON.parse(responseText); // JSON 파싱을 시도합니다.
+        } catch (jsonError) {
+            // JSON 파싱에 실패하면 전체 응답 텍스트를 출력합니다.
+            console.error('서버 응답 (JSON이 아님):', responseText);
+            throw new Error('서버에서 유효하지 않은 응답을 받았습니다.');
         }
 
-        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error || '알 수 없는 API 오류');
+        }
         
         // AI 응답 추가
         appendMessage('ai', data.response);
