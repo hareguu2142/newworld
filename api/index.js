@@ -1,6 +1,10 @@
 const express = require("express");
 const path = require("path");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const {
+  GoogleGenerativeAI,
+  HarmCategory,
+  HarmBlockThreshold,
+} = require("@google/generative-ai");
 require('dotenv').config();
 
 const app = express();
@@ -12,7 +16,7 @@ const genAI = new GoogleGenerativeAI(apiKey);
 
 const model = genAI.getGenerativeModel({
   model: "gemini-1.5-pro-exp-0827",
-  systemInstruction: "당신은 웹사이트 관리자입니다.", // "홈페이지 관리자" -> "웹사이트 관리자"로 변경
+  systemInstruction: "당신은 대한민국의 여자 고등학교 학생입니다. 대화를 하면서 불쾌함(unpleasant)을 수치로 나타냅니다. 최소 0, 최대는 1입니다. 불쾌함은 그 사이의 모든 실수값을 표현합니다.",
 });
 
 const generationConfig = {
@@ -20,13 +24,29 @@ const generationConfig = {
   topP: 0.95,
   topK: 64,
   maxOutputTokens: 8192,
+  responseMimeType: "application/json",
+  responseSchema: {
+    type: "object",
+    properties: {
+      response: {
+        type: "string"
+      },
+      unpleasant: {
+        type: "number"
+      }
+    },
+    required: [
+      "response",
+      "unpleasant"
+    ]
+  },
 };
 
-app.post('/api/chat', async (req, res) => { // = -> => 로 변경
+app.post('/api/chat', async (req, res) => {
   try {
     const chatSession = model.startChat({
       generationConfig,
-      history: req.body.history.map(msg => ({ // = -> => 로 변경
+      history: req.body.history.map(msg => ({
         role: msg.sender === 'user' ? 'user' : 'model',
         parts: [{ text: msg.content }],
       })),
@@ -38,9 +58,10 @@ app.post('/api/chat', async (req, res) => { // = -> => 로 변경
     
     const responseText = result.response.text();
     if (responseText) {
-      res.json({ response: responseText });
+      const parsedResponse = JSON.parse(responseText);
+      res.json(parsedResponse);
     } else {
-      throw new Error('AI로부터 빈 응답을 받았습니다.'); // "Empty response from AI" -> "AI로부터 빈 응답을 받았습니다."로 변경
+      throw new Error('AI로부터 빈 응답을 받았습니다.');
     }
   } catch (error) {
     console.error('Error details:', error);
@@ -48,7 +69,7 @@ app.post('/api/chat', async (req, res) => { // = -> => 로 변경
   }
 });
 
-app.get("*", (req, res) => { // = -> => 로 변경
+app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, '../public', 'index.html'));
 });
 

@@ -1,11 +1,14 @@
 let chatHistory = [];
 
-// 페이지 로드 시 로컬 스토리지에서 대화 내용 불러오기
 window.onload = function() {
+    loadChatHistory();
+}
+
+function loadChatHistory() {
     const storedHistory = localStorage.getItem('chatHistory');
     if (storedHistory) {
         chatHistory = JSON.parse(storedHistory);
-        chatHistory.forEach(msg = appendMessage(msg.sender, msg.content));
+        chatHistory.forEach(msg = appendMessage(msg.sender, msg.content, msg.unpleasant));
     }
 }
 
@@ -36,10 +39,10 @@ async function sendMessage() {
         const data = await response.json();
         
         if (data.response) {
-            appendMessage('ai', data.response);
-            chatHistory.push({sender: 'ai', content: data.response});
-            // 로컬 스토리지에 대화 내용 저장
-            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+            appendMessage('ai', data.response, data.unpleasant);
+            chatHistory.push({sender: 'ai', content: data.response, unpleasant: data.unpleasant});
+            updateUnpleasantMeter(data.unpleasant);
+            saveChatHistory();
         } else {
             throw new Error('AI 응답이 비어있습니다.');
         }
@@ -51,13 +54,46 @@ async function sendMessage() {
     input.value = '';
 }
 
-function appendMessage(sender, message) {
+function appendMessage(sender, message, unpleasant = null) {
     const chatMessages = document.getElementById('chat-messages');
     const messageElement = document.createElement('div');
     messageElement.classList.add('message', `${sender}-message`);
     messageElement.textContent = message;
+    if (unpleasant !== null) {
+        const unpleasantIndicator = document.createElement('span');
+        unpleasantIndicator.classList.add('unpleasant-indicator');
+        unpleasantIndicator.textContent = `불쾌도: ${(unpleasant * 100).toFixed(1)}%`;
+        messageElement.appendChild(unpleasantIndicator);
+    }
     chatMessages.appendChild(messageElement);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function updateUnpleasantMeter(unpleasant) {
+    const meterFill = document.getElementById('meter-fill');
+    const meterValue = document.getElementById('meter-value');
+    const percentage = unpleasant * 100;
+    meterFill.style.width = `${percentage}%`;
+    meterValue.textContent = `${percentage.toFixed(1)}%`;
+
+    if (percentage < 33) {
+        meterFill.style.backgroundColor = '#4CAF50';
+    } else if (percentage < 66) {
+        meterFill.style.backgroundColor = '#FFA500';
+    } else {
+        meterFill.style.backgroundColor = '#FF0000';
+    }
+}
+
+function saveChatHistory() {
+    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+}
+
+function clearChat() {
+    chatHistory = [];
+    localStorage.removeItem('chatHistory');
+    document.getElementById('chat-messages').innerHTML = '';
+    updateUnpleasantMeter(0);
 }
 
 document.getElementById('user-input').addEventListener('keypress', function(e) {
@@ -65,3 +101,40 @@ document.getElementById('user-input').addEventListener('keypress', function(e) {
         sendMessage();
     }
 });
+
+// 기존 코드는 그대로 두고 updateUnpleasantMeter 함수를 다음과 같이 수정합니다.
+
+function updateUnpleasantMeter(unpleasant) {
+    const meterFill = document.getElementById('meter-fill');
+    const meterValue = document.getElementById('meter-value');
+    const percentage = unpleasant * 100;
+    meterFill.style.width = `${percentage}%`;
+    meterValue.textContent = `${percentage.toFixed(1)}%`;
+
+    if (percentage < 33) {
+        meterFill.style.backgroundColor = '#4CAF50';
+    } else if (percentage < 66) {
+        meterFill.style.backgroundColor = '#FFA500';
+    } else {
+        meterFill.style.backgroundColor = '#FF0000';
+    }
+
+    // 화면 어둡게 만들기
+    updateScreenDarkness(unpleasant);
+}
+
+// 새로운 함수 추가
+function updateScreenDarkness(unpleasant) {
+    const overlay = document.getElementById('dark-overlay');
+    const opacity = unpleasant * 0.8; // 최대 50%까지 어두워지도록 설정
+    overlay.style.backgroundColor = `rgba(0, 0, 0, ${opacity})`;
+}
+
+// clearChat 함수에 화면 밝기 초기화 추가
+function clearChat() {
+    chatHistory = [];
+    localStorage.removeItem('chatHistory');
+    document.getElementById('chat-messages').innerHTML = '';
+    updateUnpleasantMeter(0);
+    updateScreenDarkness(0); // 화면 밝기 초기화
+}
