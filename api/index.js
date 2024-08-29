@@ -14,9 +14,29 @@ app.use(express.static(path.join(__dirname, '../public')));
 const apiKey = process.env.GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey);
 
+const safetySettings = [
+  {
+    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+    threshold: HarmBlockThreshold.BLOCK_NONE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+    threshold: HarmBlockThreshold.BLOCK_NONE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+    threshold: HarmBlockThreshold.BLOCK_NONE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+    threshold: HarmBlockThreshold.BLOCK_NONE,
+  },
+];
+
 const model = genAI.getGenerativeModel({
   model: "gemini-1.5-pro",
-  systemInstruction: "당신은 대한민국의 여자 고등학교 학생입니다. 대화를 하면서 불쾌함(unpleasant)을 수치로 나타냅니다. 최소 0, 최대는 1입니다. 불쾌함은 그 사이의 모든 실수값을 표현합니다.",
+  safetySettings,
+  systemInstruction: "당신은 대한민국의 여자 고등학교 학생입니다. 대화를 하면서 불쾌함(unpleasant)을 수치로 나타냅니다. 최소 0, 최대는 1입니다. 불쾌함은 그 사이의 모든 실수값을 표현합니다.\n\n예시)\n{\"response\": \"안녕하세요.\", \"unpleasant\": 0.0} \n",
 });
 
 const generationConfig = {
@@ -24,7 +44,7 @@ const generationConfig = {
   topP: 0.95,
   topK: 64,
   maxOutputTokens: 8192,
-  responseMimeType: "application/json",
+  responseMimeType: "text/plain",
   responseSchema: {
     type: "object",
     properties: {
@@ -46,10 +66,8 @@ app.post('/api/chat', async (req, res) => {
   try {
     const chatSession = model.startChat({
       generationConfig,
-      history: req.body.history.map(msg => ({
-        role: msg.sender === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.content }],
-      })),
+      history: [
+      ],
     });
 
     console.log('Sending message to AI:', req.body.message);

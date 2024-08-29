@@ -8,7 +8,7 @@ function loadChatHistory() {
     const storedHistory = localStorage.getItem('chatHistory');
     if (storedHistory) {
         chatHistory = JSON.parse(storedHistory);
-        chatHistory.forEach(msg = appendMessage(msg.sender, msg.content, msg.unpleasant));
+        chatHistory.forEach(msg => appendMessage(msg.sender, msg.content, msg.unpleasant));
     }
 }
 
@@ -28,7 +28,7 @@ async function sendMessage() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ message: userMessage, history: chatHistory }),
+            body: JSON.stringify({ message: userMessage }),
         });
         
         if (!response.ok) {
@@ -83,6 +83,14 @@ function updateUnpleasantMeter(unpleasant) {
     } else {
         meterFill.style.backgroundColor = '#FF0000';
     }
+
+    updateScreenDarkness(unpleasant);
+}
+
+function updateScreenDarkness(unpleasant) {
+    const overlay = document.getElementById('dark-overlay');
+    const opacity = unpleasant * 0.5; // 최대 50%까지 어두워지도록 설정
+    overlay.style.backgroundColor = `rgba(0, 0, 0, ${opacity})`;
 }
 
 function saveChatHistory() {
@@ -94,6 +102,7 @@ function clearChat() {
     localStorage.removeItem('chatHistory');
     document.getElementById('chat-messages').innerHTML = '';
     updateUnpleasantMeter(0);
+    updateScreenDarkness(0);
 }
 
 document.getElementById('user-input').addEventListener('keypress', function(e) {
@@ -101,40 +110,3 @@ document.getElementById('user-input').addEventListener('keypress', function(e) {
         sendMessage();
     }
 });
-
-// 기존 코드는 그대로 두고 updateUnpleasantMeter 함수를 다음과 같이 수정합니다.
-
-function updateUnpleasantMeter(unpleasant) {
-    const meterFill = document.getElementById('meter-fill');
-    const meterValue = document.getElementById('meter-value');
-    const percentage = unpleasant * 100;
-    meterFill.style.width = `${percentage}%`;
-    meterValue.textContent = `${percentage.toFixed(1)}%`;
-
-    if (percentage < 33) {
-        meterFill.style.backgroundColor = '#4CAF50';
-    } else if (percentage < 66) {
-        meterFill.style.backgroundColor = '#FFA500';
-    } else {
-        meterFill.style.backgroundColor = '#FF0000';
-    }
-
-    // 화면 어둡게 만들기
-    updateScreenDarkness(unpleasant);
-}
-
-// 새로운 함수 추가
-function updateScreenDarkness(unpleasant) {
-    const overlay = document.getElementById('dark-overlay');
-    const opacity = unpleasant * 0.8; // 최대 50%까지 어두워지도록 설정
-    overlay.style.backgroundColor = `rgba(0, 0, 0, ${opacity})`;
-}
-
-// clearChat 함수에 화면 밝기 초기화 추가
-function clearChat() {
-    chatHistory = [];
-    localStorage.removeItem('chatHistory');
-    document.getElementById('chat-messages').innerHTML = '';
-    updateUnpleasantMeter(0);
-    updateScreenDarkness(0); // 화면 밝기 초기화
-}
