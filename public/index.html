@@ -3,28 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>고등학생 AI 채팅</title>
+    <title>무엇을 숨기고 있는가?</title>
     <link rel="stylesheet" href="/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="dark-overlay"></div>
     <div class="chat-container">
-        <h1>고등학생 AI 채팅</h1>
+        <h1>무엇을 숨기고 있는가?</h1>
         <div id="chat-messages" class="chat-messages"></div>
         <div class="input-area">
             <input type="text" id="user-input" placeholder="메시지를 입력하세요...">
             <button onclick="sendMessage()">전송</button>
         </div>
-        <div id="unpleasant-meter" class="unpleasant-meter">
-            <div class="meter-label">불쾌도:</div>
-            <div class="meter-bar">
-                <div id="meter-fill" class="meter-fill"></div>
-            </div>
-            <div id="meter-value" class="meter-value">0%</div>
+        <div class="brightness-control">
+            <label for="brightness-slider">밝기 조절:</label>
+            <input type="range" id="brightness-slider" min="0" max="1" step="0.1" value="1">
         </div>
         <button id="clear-chat" onclick="clearChat()">채팅 내역 삭제</button>
     </div>
+
+    
     <script src="/script.js"></script>
 </body>
 </html>

@@ -36,6 +36,7 @@ const safetySettings = [
 const model = genAI.getGenerativeModel({
   model: "gemini-1.5-pro",
   safetySettings,
+  systemInstruction: "user는 아래 npc와 대화를 합니다.\n\nnpc\n1. 이름: 김승현\n2. 나이: 14살\n3. 국적: 한국\n4. 성격: 친절합니다.\n5. 성별: 남성\n\nsetting\nsetting값을 줄 수 있습니다. 화면 밝기는 기본적으로 1이지만, 어둡게 만들 수 있습니다. 어두울때는 0이고, 밝기는 1과 0사이를 왔다갔다 합니다.\n\n예를 들어 화면 밝기와 관련된 요청이 들어오면 대화 뒤에 밝기:(0과 1사이 숫자)라고 아래에 적습니다.\n평소에는 적지 않습니다.",
 });
 
 const generationConfig = {
@@ -43,46 +44,27 @@ const generationConfig = {
   topP: 0.95,
   topK: 64,
   maxOutputTokens: 8192,
+  responseMimeType: "text/plain",
 };
 
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, chatHistory } = req.body;
 
-    // 전체 대화 내용을 하나의 문자열로 만듭니다.
-    const fullConversation = chatHistory
-      .map(msg => `${msg.sender === 'user' ? '사용자' : 'AI'}: ${msg.content}`)
-      .join('\n');
+    const chatSession = model.startChat({
+      generationConfig,
+      history: chatHistory.map(msg => ({
+        role: msg.sender === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.content }],
+      })),
+    });
 
-    // 시스템 지시사항과 전체 대화 내용을 포함하여 AI에 요청을 보냅니다.
-    const prompt = `당신은 대한민국의 여자 고등학교 학생입니다. 대화를 하면서 불쾌함(unpleasant)을 수치로 나타냅니다. 최소 0, 최대는 1입니다. 불쾌함은 그 사이의 모든 실수값을 표현합니다. 두개의 중괄호를 씁니다. 첫번째 중괄호는 대화의 내용을 씁니다. 두번째 중괄호는 불쾌감을 표현합니다. 예시: {그게 무슨 말이죠?}{0.2}
-
-다음은 지금까지의 대화 내용입니다:
-
-${fullConversation}
-
-사용자: ${message}
-
-이제 다음 응답을 해주세요. 응답 형식을 꼭 지켜주세요.`;
-
-    console.log('Sending message to AI:', prompt);
-    const result = await model.generateContent(prompt);
+    const result = await chatSession.sendMessage(message);
     const responseText = result.response.text();
+
     console.log('Received response from AI:', responseText);
 
-    if (responseText) {
-      const matches = responseText.match(/\{([^}]+)\}\{([^}]+)\}/);
-      if (matches && matches.length === 3) {
-        const response = matches[1].trim();
-        const unpleasant = parseFloat(matches[2]);
-
-        res.json({ response, unpleasant });
-      } else {
-        throw new Error('응답 형식이 올바르지 않습니다.');
-      }
-    } else {
-      throw new Error('AI로부터 빈 응답을 받았습니다.');
-    }
+    res.json({ response: responseText });
   } catch (error) {
     console.error('Error details:', error);
     res.status(500).json({ error: 'Internal server error', details: error.message });

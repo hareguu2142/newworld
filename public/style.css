@@ -21,6 +21,20 @@ body {
     height: 80vh;
 }
 
+.brightness-control {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.brightness-control label {
+    margin-right: 10px;
+}
+
+#brightness-slider {
+    width: 200px;
+}
+
 h1 {
     text-align: center;
     color: #333;
@@ -82,43 +96,6 @@ button {
 
 button:hover {
     background-color: #45a049;
-}
-
-.unpleasant-meter {
-    display: flex;
-    align-items: center;
-    margin-top: 10px;
-}
-
-.meter-label {
-    margin-right: 10px;
-}
-
-.meter-bar {
-    flex-grow: 1;
-    height: 20px;
-    background-color: #e0e0e0;
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-.meter-fill {
-    height: 100%;
-    width: 0%;
-    background-color: #4CAF50;
-    transition: width 0.3s ease;
-}
-
-.meter-value {
-    margin-left: 10px;
-    font-weight: bold;
-}
-
-.unpleasant-indicator {
-    font-size: 0.8em;
-    color: #888;
-    margin-top: 5px;
-    display: block;
 }
 
 #clear-chat {
