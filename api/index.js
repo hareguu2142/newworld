@@ -36,7 +36,6 @@ const safetySettings = [
 const model = genAI.getGenerativeModel({
   model: "gemini-1.5-pro",
   safetySettings,
-  systemInstruction: "당신은 대한민국의 여자 고등학교 학생입니다. 대화를 하면서 불쾌함(unpleasant)을 수치로 나타냅니다. 최소 0, 최대는 1입니다. 불쾌함은 그 사이의 모든 실수값을 표현합니다.\n\n예시)\n{\"response\": \"안녕하세요.\", \"unpleasant\": 0.0} \n",
 });
 
 const generationConfig = {
@@ -44,40 +43,43 @@ const generationConfig = {
   topP: 0.95,
   topK: 64,
   maxOutputTokens: 8192,
-  responseMimeType: "text/plain",
-  responseSchema: {
-    type: "object",
-    properties: {
-      response: {
-        type: "string"
-      },
-      unpleasant: {
-        type: "number"
-      }
-    },
-    required: [
-      "response",
-      "unpleasant"
-    ]
-  },
 };
 
 app.post('/api/chat', async (req, res) => {
   try {
-    const chatSession = model.startChat({
-      generationConfig,
-      history: [
-      ],
-    });
+    const { message, chatHistory } = req.body;
 
-    console.log('Sending message to AI:', req.body.message);
-    const result = await chatSession.sendMessage(req.body.message);
-    console.log('Received response from AI:', result.response.text());
-    
+    // 전체 대화 내용을 하나의 문자열로 만듭니다.
+    const fullConversation = chatHistory
+      .map(msg => `${msg.sender === 'user' ? '사용자' : 'AI'}: ${msg.content}`)
+      .join('\n');
+
+    // 시스템 지시사항과 전체 대화 내용을 포함하여 AI에 요청을 보냅니다.
+    const prompt = `당신은 대한민국의 여자 고등학교 학생입니다. 대화를 하면서 불쾌함(unpleasant)을 수치로 나타냅니다. 최소 0, 최대는 1입니다. 불쾌함은 그 사이의 모든 실수값을 표현합니다. 두개의 중괄호를 씁니다. 첫번째 중괄호는 대화의 내용을 씁니다. 두번째 중괄호는 불쾌감을 표현합니다. 예시: {그게 무슨 말이죠?}{0.2}
+
+다음은 지금까지의 대화 내용입니다:
+
+${fullConversation}
+
+사용자: ${message}
+
+이제 다음 응답을 해주세요. 응답 형식을 꼭 지켜주세요.`;
+
+    console.log('Sending message to AI:', prompt);
+    const result = await model.generateContent(prompt);
     const responseText = result.response.text();
+    console.log('Received response from AI:', responseText);
+
     if (responseText) {
-      const parsedResponse = JSON.parse(responseText);
-      res.json(parsedResponse);
+      const matches = responseText.match(/\{([^}]+)\}\{([^}]+)\}/);
+      if (matches && matches.length === 3) {
+        const response = matches[1].trim();
+        const unpleasant = parseFloat(matches[2]);
+
+        res.json({ response, unpleasant });
+      } else {
+        throw new Error('응답 형식이 올바르지 않습니다.');
+      }
     } else {
       throw new Error('AI로부터 빈 응답을 받았습니다.');
     }

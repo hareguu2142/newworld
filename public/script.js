@@ -1,4 +1,5 @@
 let chatHistory = [];
+const sessionId = Date.now().toString();
 
 window.onload = function() {
     loadChatHistory();
@@ -15,7 +16,6 @@ function loadChatHistory() {
 async function sendMessage() {
     const input = document.getElementById('user-input');
     const chatMessages = document.getElementById('chat-messages');
-    
     if (input.value.trim() === '') return;
 
     const userMessage = input.value;
@@ -28,16 +28,14 @@ async function sendMessage() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ message: userMessage }),
+            body: JSON.stringify({ message: userMessage, chatHistory }),
         });
-        
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.details || 'API 응답 오류');
         }
 
         const data = await response.json();
-        
         if (data.response) {
             appendMessage('ai', data.response, data.unpleasant);
             chatHistory.push({sender: 'ai', content: data.response, unpleasant: data.unpleasant});
